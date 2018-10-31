@@ -21,7 +21,7 @@ class Snake():
         self.xspeed = 1
         self.yspeed = 0
         self.history = []
-        self.total = 10
+        self.total = 3
 
     def draw(self):
         for i in self.history:
