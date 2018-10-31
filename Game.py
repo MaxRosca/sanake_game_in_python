@@ -14,127 +14,116 @@ screen.fill(blackColor)
 clock = pygame.time.Clock()
 pygame.font.init()
 
-exitGame = False
-snakeSize = screenSize[1]//40
-orientations = []
-orientationBackup = 0
-moves = 0
-foodX = random.randrange(0, 600 , snakeSize)
-foodY = foodX
-canAppend = False
-snakeOrientation = 0
-sameLine = 0
-orientationIndex = 0
+class Snake():
+    def __init__(self):
+        self.x = 0
+        self.y = 0
+        self.xspeed = 1
+        self.yspeed = 0
+        self.history = []
+        self.total = 10
 
-class tail():
-    def __init__(self, x, y, orientation, moved, orientationIndex):
-        self.x = x
-        self.y = y
-        self.orientation = orientation
-        self.moved = moved
-        self.orientations = []
-        self.orientationIndex = orientationIndex
+    def draw(self):
+        for i in self.history:
+            pygame.draw.rect(screen, whiteColor, [i[0], i[1], size, size])
 
-snake = [tail(screenSize[0]//2 - 3*snakeSize, screenSize[0]//2, 2, 10, orientationIndex), tail(screenSize[0]//2 - 2*snakeSize, screenSize[0]//2, 2, 10, orientationIndex),tail(screenSize[0]//2 - snakeSize, screenSize[0]//2, 2, 10, orientationIndex)
-, tail(screenSize[0]//2, screenSize[0]//2, 2, 10, orientationIndex)]
+    def update(self):
+        self.x += self.xspeed
+        self.y += self.yspeed
+        if self.x > 600:
+            self.x = 0
+        if self.x < 0:
+            self.x = 600
+        if self.y > 600:
+            self.y = 0
+        if self.y < 0:
+            self.y = 600
+        if len(self.history) >= self.total:
+            self.history.remove(self.history[0])
+        self.history.append([self.x, self.y])
 
-pygame.draw.rect(screen, redColor, [foodX, foodY, snakeSize, snakeSize])
 
-while not exitGame:
-    screen.fill(blackColor)
+    def setSpeed(self, directions):
+        self.xspeed = size * directions[0]
+        self.yspeed = size * directions[1]
 
+    def increaseTail(self):
+        self.total += 1
+
+    def isHited(self):
+        containing = 0
+        for headPos in self.history:
+            containing = 0
+            for i in range(len(self.history)):
+                if self.history[i] == headPos:
+                    containing += 1
+            # print(containing)
+            if containing >= 2:
+                return True
+        return False
+
+class Food():
+    def __init__(self):
+        self.x = random.randrange(0, screenSize[0], size)
+        self.y = random.randrange(0, screenSize[1], size)
+
+    def nextPos(self):
+        self.x = random.randrange(0, screenSize[0], size)
+        self.y = random.randrange(0, screenSize[1], size)
+
+    def draw(self):
+        pygame.draw.rect(screen, redColor, [self.x, self.y, size, size])
+
+    def isEaten(self, snake):
+        if self.x == snake.x and self.y + size/2 == snake.y + size/2:
+            return True
+        return False
+
+size = screenSize[0]//40
+snake = Snake()
+food = Food()
+directions = (0, 1)
+
+gameOver = False
+
+while not gameOver:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            exitGame = True
+            gameOver = True
+
         if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_UP:
+                if directions != (0, 1):
+                    directions = (0, -1)
             if event.key == pygame.K_RIGHT:
-                for j in snake:
-                    j.orientations.append(2)
-                    if j.orientationIndex == len(j.orientations) - 1:
-                        j.moved = 0
-                break
-            elif event.key == pygame.K_UP:
-                for j in snake:
-                    j.orientations.append(1)
-                    if j.orientationIndex == len(j.orientations) - 1:
-                        j.moved = 0
-                break
+                if directions != (-1, 0):
+                    directions = (1, 0)
+            if event.key == pygame.K_DOWN:
+                if directions != (0, -1):
+                    directions = (0, 1)
+            if event.key == pygame.K_LEFT:
+                if directions != (1, 0):
+                    directions = (-1, 0)
+            if event.key == pygame.K_r:
+                snake = Snake()
 
-            elif event.key == pygame.K_DOWN:
-                for j in snake:
-                    j.orientations.append(3)
-                    if j.orientationIndex == len(j.orientations) - 1:
-                        j.moved = 0
-                break
-            elif event.key == pygame.K_LEFT:
-                for j in snake:
-                    j.orientations.append(4)
-                    if j.orientationIndex == len(j.orientations) - 1:
-                        j.moved = 0
-                break
+    screen.fill(blackColor)
 
-    for i in range(len(snake)):
-        print(len(snake) - 1 - i, i, snake[i].moved , "ASD")
-        if snake[i].moved == len(snake) - 1 - i:
-            print(snake[i].orientationIndex, i, snake[i].moved)
-            snake[i].orientation = snake[i].orientations[snake[i].orientationIndex]
-            snake[i].orientationIndex += 1
-            if snake[i].orientationIndex != len(snake[i].orientations):
-                snake[i].moved = 0
+    food.draw()
 
-        if snake[i].orientation == 1:
-            snake[i].y -= snakeSize
-        elif snake[i].orientation == 2:
-            snake[i].x += snakeSize
-        elif snake[i].orientation == 3:
-            snake[i].y += snakeSize
-        elif snake[i].orientation == 4:
-            snake[i].x -= snakeSize
+    snake.setSpeed(directions)
+    snake.update()
+    snake.draw()
 
-        if snake[len(snake) - 1].x <= foodX + snakeSize and snake[len(snake) - 1].y <= foodY + snakeSize and snake[len(snake) - 1].x >= foodX and snake[len(snake) - 1].y >= foodY:
-            canAppend = True
+    if food.isEaten(snake):
+        snake.increaseTail()
+        food.nextPos()
 
-        if i == len(snake) - 1:
-            snakeOrientation = snake[i].orientation
-        else:
-            if snake[i].orientation != snakeOrientation:
-                sameLine += 1
+    if snake.isHited():
+        snake = Snake()
 
-        snake[i].moved += 1
-
-        if snake[i].x > 600:
-            snake[i].x = 0
-        if snake[i].x < 0:
-            snake[i].x = 600
-        if snake[i].y > 600:
-            snake[i].y = 0
-        if snake[i].y < 0:
-            snake[i].y = 600
-
-        pygame.draw.rect(screen, whiteColor, [snake[i].x, snake[i].y, snakeSize, snakeSize])
-
-    if canAppend and sameLine == 0:
-        insertX = snake[0].x
-        insertY = snake[0].y
-        if snake[0].orientation == 1:
-            insertY = snake[0].y + snakeSize
-        elif snake[0].orientation == 2:
-            insertX = snake[0].x - snakeSize
-        elif snake[0].orientation == 3:
-            insertY = snake[0].y - snakeSize
-        elif snake[0].orientation == 4:
-            insertX += snakeSize
-
-        snake.insert(0, tail(insertX, insertY, snake[0].orientation, snake[0].moved, snake[0].orientationIndex))
-
-        foodX = random.randrange(0, 600 , snakeSize)
-        foodY = random.randrange(0, 600 , snakeSize)
-        canAppend = False
-
-    sameLine = 0
-
-    pygame.draw.rect(screen, redColor, [foodX, foodY, snakeSize, snakeSize])
     pygame.display.update()
     clock.tick(10)
+
 pygame.quit()
 exit
