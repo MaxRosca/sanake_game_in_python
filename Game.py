@@ -57,7 +57,6 @@ class Snake():
             for i in range(len(self.history)):
                 if self.history[i] == headPos:
                     containing += 1
-            # print(containing)
             if containing >= 2:
                 return True
         return False
